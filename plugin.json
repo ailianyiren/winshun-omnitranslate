@@ -1,0 +1,569 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LingCore/WinShun-plugins/main/schema/plugin.schema.json",
+  "manifest": 1,
+  "id": "anghost.translate",
+  "name": {
+    "zh": "顺译 · 多源翻译",
+    "en": "OmniTranslate"
+  },
+  "version": "1.1.0",
+  "description": {
+    "zh": "支持有道词典与微软免 Key 翻译，以及智谱、AI 大模型、DeepL、百度、有道、火山、腾讯、Google 多服务并发流式对比，支持全局划词唤起、静默替换、代码变量命名与 Anki 导出",
+    "en": "Concurrent multi-provider streaming translation, keyless Youdao Dictionary & Microsoft Translate, Zhipu/AI/DeepL/Baidu/Volcengine/Tencent/Google, global selection hotkeys, code variable naming, and Anki export"
+  },
+  "author": "anghost",
+  "homepage": "https://github.com/ailianyiren/winshun-omnitranslate",
+  "license": "MIT",
+  "icon": "icons/plugin.png",
+  "minWinShun": "0.18.0",
+  "runtime": {
+    "mode": "resident",
+    "program": "python",
+    "script": "main.py",
+    "start": "eager",
+    "timeoutMs": 10000,
+    "debounceMs": 260,
+    "idleExitSec": 0
+  },
+  "permissions": [
+    "network",
+    "ui",
+    "clipboard:read",
+    "clipboard:write"
+  ],
+  "ai": {
+    "expose": true
+  },
+  "commands": [
+    {
+      "id": "tr",
+      "keyword": ["ot", "sy", "顺译", "翻译"],
+      "title": {
+        "zh": "多源翻译",
+        "en": "Translate"
+      },
+      "description": {
+        "zh": "多服务并发流式翻译，支持 :en / :zh / :ja 等前缀指定目标语言",
+        "en": "Concurrent multi-provider streaming translation; prefix with :en / :zh / :ja to specify target language"
+      },
+      "icon": "icons/plugin.png",
+      "hint": {
+        "zh": "输入要翻译的文字（可用 :en / :ja 指定目标语言）",
+        "en": "Type text to translate (use :en / :ja for target language)"
+      },
+      "actions": [
+        {
+          "id": "copy",
+          "title": {
+            "zh": "复制译文",
+            "en": "Copy translation"
+          },
+          "key": "Enter"
+        },
+        {
+          "id": "favorite",
+          "title": {
+            "zh": "收藏并复制",
+            "en": "Favorite & Copy"
+          },
+          "key": "Ctrl+Enter"
+        },
+        {
+          "id": "speak",
+          "title": {
+            "zh": "朗读译文",
+            "en": "Speak translation"
+          },
+          "key": "Shift+Enter"
+        }
+      ],
+      "ai": {
+        "description": "Translate text between languages using OmniTranslate multi-provider translation engine (Microsoft, Youdao Dictionary, Zhipu GLM, OpenAI/Anthropic, DeepL, Baidu, Volcengine, Tencent, Google)."
+      }
+    },
+    {
+      "id": "dict",
+      "keyword": ["od", "cd", "查词"],
+      "title": {
+        "zh": "双语词典",
+        "en": "Dictionary"
+      },
+      "description": {
+        "zh": "免 Key 有道词典与 AI 双语词典并发查词（音标、词性、词形变化、双语例句）",
+        "en": "Keyless Youdao Dictionary & AI bilingual dictionary lookup (phonetics, definitions, inflections, examples)"
+      },
+      "icon": "icons/youdaoDict.png",
+      "hint": {
+        "zh": "输入要查询的单词或短语",
+        "en": "Type a word or phrase to look up"
+      },
+      "actions": [
+        {
+          "id": "copy",
+          "title": {
+            "zh": "复制词条",
+            "en": "Copy entry"
+          },
+          "key": "Enter"
+        },
+        {
+          "id": "favorite",
+          "title": {
+            "zh": "收藏词条",
+            "en": "Favorite entry"
+          },
+          "key": "Ctrl+Enter"
+        },
+        {
+          "id": "speak",
+          "title": {
+            "zh": "朗读单词",
+            "en": "Speak word"
+          },
+          "key": "Shift+Enter"
+        }
+      ]
+    },
+    {
+      "id": "trh",
+      "keyword": ["trh", "翻译历史"],
+      "title": {
+        "zh": "翻译历史与收藏",
+        "en": "Translation History"
+      },
+      "description": {
+        "zh": "检索翻译历史、筛选收藏（fav）、导出 Anki TSV / CSV（export）或清空历史（clear）",
+        "en": "Search translation history, filter favorites (fav), export Anki TSV / CSV (export), or clear history (clear)"
+      },
+      "icon": "glyph:U+E81C",
+      "hint": {
+        "zh": "输入关键词过滤 / fav 只看收藏 / export 导出 Anki 与 CSV",
+        "en": "Type keyword / fav for favorites / export for Anki & CSV"
+      },
+      "actions": [
+        {
+          "id": "copy",
+          "title": {
+            "zh": "复制译文",
+            "en": "Copy translation"
+          },
+          "key": "Enter"
+        },
+        {
+          "id": "retranslate",
+          "title": {
+            "zh": "重新翻译原文",
+            "en": "Re-translate source"
+          },
+          "key": "Ctrl+Enter"
+        },
+        {
+          "id": "toggle_fav",
+          "title": {
+            "zh": "切换收藏状态",
+            "en": "Toggle favorite"
+          },
+          "key": "Shift+Enter"
+        }
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "firstLang",
+      "type": "choice",
+      "title": {
+        "zh": "第一语言（母语）",
+        "en": "First Language (Native)"
+      },
+      "hint": {
+        "zh": "自动模式下：原文不是第一语言时译为第一语言，原文是第一语言时译为第二语言",
+        "en": "In auto mode: translates into First Language unless source is already in First Language"
+      },
+      "default": "zh-Hans",
+      "options": [
+        {"value": "zh-Hans", "title": {"zh": "简体中文", "en": "Simplified Chinese"}},
+        {"value": "zh-Hant", "title": {"zh": "繁体中文", "en": "Traditional Chinese"}},
+        {"value": "en", "title": {"zh": "英语", "en": "English"}},
+        {"value": "ja", "title": {"zh": "日语", "en": "Japanese"}},
+        {"value": "ko", "title": {"zh": "韩语", "en": "Korean"}},
+        {"value": "fr", "title": {"zh": "法语", "en": "French"}},
+        {"value": "de", "title": {"zh": "德语", "en": "German"}},
+        {"value": "es", "title": {"zh": "西班牙语", "en": "Spanish"}},
+        {"value": "ru", "title": {"zh": "俄语", "en": "Russian"}},
+        {"value": "pt", "title": {"zh": "葡萄牙语", "en": "Portuguese"}},
+        {"value": "it", "title": {"zh": "意大利语", "en": "Italian"}}
+      ]
+    },
+    {
+      "key": "secondLang",
+      "type": "choice",
+      "title": {
+        "zh": "第二语言（常用外语）",
+        "en": "Second Language"
+      },
+      "default": "en",
+      "options": [
+        {"value": "en", "title": {"zh": "英语", "en": "English"}},
+        {"value": "zh-Hans", "title": {"zh": "简体中文", "en": "Simplified Chinese"}},
+        {"value": "zh-Hant", "title": {"zh": "繁体中文", "en": "Traditional Chinese"}},
+        {"value": "ja", "title": {"zh": "日语", "en": "Japanese"}},
+        {"value": "ko", "title": {"zh": "韩语", "en": "Korean"}},
+        {"value": "fr", "title": {"zh": "法语", "en": "French"}},
+        {"value": "de", "title": {"zh": "德语", "en": "German"}},
+        {"value": "es", "title": {"zh": "西班牙语", "en": "Spanish"}},
+        {"value": "ru", "title": {"zh": "俄语", "en": "Russian"}},
+        {"value": "pt", "title": {"zh": "葡萄牙语", "en": "Portuguese"}},
+        {"value": "it", "title": {"zh": "意大利语", "en": "Italian"}}
+      ]
+    },
+    {
+      "key": "joinLines",
+      "type": "bool",
+      "title": {
+        "zh": "段落接行",
+        "en": "Join Paragraph Lines"
+      },
+      "hint": {
+        "zh": "开启后，翻译前自动把 PDF 或多行文本同一段内的软换行拼接成整句",
+        "en": "Join single line breaks within the same paragraph before translating"
+      },
+      "default": true
+    },
+    {
+      "key": "selectionHotkey",
+      "type": "hotkey",
+      "title": {
+        "zh": "划词翻译快捷键",
+        "en": "Selection Translate Hotkey"
+      },
+      "hint": {
+        "zh": "在任意窗口选中文字后按下，自动取词并唤起 Win顺 面板进行多源翻译（留空则不注册）",
+        "en": "Select text in any app and press to open WinShun with the selected text"
+      },
+      "default": "Alt+D"
+    },
+    {
+      "key": "replaceHotkey",
+      "type": "hotkey",
+      "title": {
+        "zh": "划词翻译并替换快捷键",
+        "en": "Translate & Replace Hotkey"
+      },
+      "hint": {
+        "zh": "在输入框选中文字后按下，不开窗口、后台请求第一个启用的翻译服务并直接原地替换译文",
+        "en": "Select text in an input box and press to silently translate and replace in-place"
+      },
+      "default": "Alt+Shift+D"
+    },
+    {
+      "key": "enableYoudaoDict",
+      "type": "bool",
+      "title": {
+        "zh": "启用有道词典（免 Key）",
+        "en": "Enable Youdao Dictionary (Keyless)"
+      },
+      "hint": {
+        "zh": "无需密钥；输入单个单词或 2~3 词短语时自动显示音标、词性、词形变化与双语例句",
+        "en": "No key required; shows phonetics, definitions, inflections and bilingual examples for words/phrases"
+      },
+      "default": true
+    },
+    {
+      "key": "enableMicrosoft",
+      "type": "bool",
+      "title": {
+        "zh": "启用微软翻译（默认免 Key）",
+        "en": "Enable Microsoft Translator (Keyless by default)"
+      },
+      "hint": {
+        "zh": "未填微软密钥时使用免 Key 接口，填写下方订阅密钥后走 Azure 认知服务官方接口",
+        "en": "Uses keyless Edge endpoint when no key is set, or Azure Cognitive Services when key is provided"
+      },
+      "default": true
+    },
+    {
+      "key": "enableZhipu",
+      "type": "bool",
+      "title": {
+        "zh": "启用智谱 GLM 翻译（流式）",
+        "en": "Enable Zhipu GLM (Streaming)"
+      },
+      "hint": {
+        "zh": "使用 open.bigmodel.cn 接口，支持 SSE 流式输出、自动关思考与单词词典模式",
+        "en": "Uses open.bigmodel.cn with SSE streaming, thinking disabled, and word dictionary prompt"
+      },
+      "default": false
+    },
+    {
+      "key": "zhipuKey",
+      "type": "password",
+      "title": {
+        "zh": "智谱 GLM API Key",
+        "en": "Zhipu GLM API Key"
+      },
+      "hint": {
+        "zh": "保存在 Windows 凭据管理器中，不写入普通配置文件或日志",
+        "en": "Stored in Windows Credential Manager"
+      }
+    },
+    {
+      "key": "zhipuModel",
+      "type": "text",
+      "title": {
+        "zh": "智谱 GLM 模型名称",
+        "en": "Zhipu GLM Model"
+      },
+      "hint": {
+        "zh": "留空默认使用免费的 glm-4-flash",
+        "en": "Defaults to glm-4-flash when empty"
+      },
+      "default": "glm-4-flash"
+    },
+    {
+      "key": "enableAi",
+      "type": "bool",
+      "title": {
+        "zh": "启用自定义 AI 大模型（流式）",
+        "en": "Enable Custom AI Service (Streaming)"
+      },
+      "hint": {
+        "zh": "支持 DeepSeek、通义千问、豆包方舟、Kimi、硅基流动、OpenRouter、OpenAI、Anthropic、Azure 与本地 Ollama",
+        "en": "Supports OpenAI-compatible, DeepSeek, Qwen, Ark, Kimi, SiliconFlow, Anthropic, Azure, and Ollama"
+      },
+      "default": false
+    },
+    {
+      "key": "aiProtocol",
+      "type": "choice",
+      "title": {
+        "zh": "AI 接口协议",
+        "en": "AI Protocol"
+      },
+      "default": "openai",
+      "options": [
+        {"value": "openai", "title": {"zh": "OpenAI 兼容 (/v1/chat/completions)", "en": "OpenAI Compatible"}},
+        {"value": "anthropic", "title": {"zh": "Anthropic (/v1/messages)", "en": "Anthropic"}},
+        {"value": "azure", "title": {"zh": "Azure OpenAI", "en": "Azure OpenAI"}}
+      ]
+    },
+    {
+      "key": "aiBaseUrl",
+      "type": "text",
+      "title": {
+        "zh": "AI 服务地址 (Base URL)",
+        "en": "AI Service Base URL"
+      },
+      "hint": {
+        "zh": "如 https://api.deepseek.com、https://dashscope.aliyuncs.com/compatible-mode/v1 或 http://localhost:11434",
+        "en": "e.g. https://api.deepseek.com or http://localhost:11434"
+      },
+      "default": "https://api.deepseek.com"
+    },
+    {
+      "key": "aiModel",
+      "type": "text",
+      "title": {
+        "zh": "AI 模型名称",
+        "en": "AI Model Name"
+      },
+      "hint": {
+        "zh": "如 deepseek-chat、qwen-plus、gpt-4o-mini、claude-3-5-haiku-latest",
+        "en": "e.g. deepseek-chat, qwen-plus, gpt-4o-mini"
+      },
+      "default": "deepseek-chat"
+    },
+    {
+      "key": "aiKey",
+      "type": "password",
+      "title": {
+        "zh": "AI 服务 API Key",
+        "en": "AI Service API Key"
+      },
+      "hint": {
+        "zh": "本机或局域网地址（如 Ollama）可留空",
+        "en": "Can be left empty for local network endpoints like Ollama"
+      }
+    },
+    {
+      "key": "enableDeepl",
+      "type": "bool",
+      "title": {
+        "zh": "启用 DeepL / DeepLX 翻译",
+        "en": "Enable DeepL / DeepLX"
+      },
+      "default": false
+    },
+    {
+      "key": "deeplKey",
+      "type": "password",
+      "title": {
+        "zh": "DeepL Auth Key",
+        "en": "DeepL Auth Key"
+      },
+      "hint": {
+        "zh": "官方免费版 Key 以 :fx 结尾；若使用下方 DeepLX 地址可留空",
+        "en": "Free keys end with :fx; leave empty if using DeepLX URL below"
+      }
+    },
+    {
+      "key": "deeplxUrl",
+      "type": "text",
+      "title": {
+        "zh": "DeepLX 自建接口地址（可选）",
+        "en": "DeepLX Endpoint URL (Optional)"
+      },
+      "hint": {
+        "zh": "填写后走 DeepLX 协议，不需要 DeepL Auth Key",
+        "en": "When set, uses DeepLX protocol without Auth Key"
+      },
+      "default": ""
+    },
+    {
+      "key": "enableBaidu",
+      "type": "bool",
+      "title": {
+        "zh": "启用百度翻译",
+        "en": "Enable Baidu Translate"
+      },
+      "default": false
+    },
+    {
+      "key": "baiduAppId",
+      "type": "text",
+      "title": {
+        "zh": "百度翻译 App ID",
+        "en": "Baidu App ID"
+      },
+      "default": ""
+    },
+    {
+      "key": "baiduSecret",
+      "type": "password",
+      "title": {
+        "zh": "百度翻译 密钥 (Secret)",
+        "en": "Baidu Secret Key"
+      }
+    },
+    {
+      "key": "enableYoudao",
+      "type": "bool",
+      "title": {
+        "zh": "启用有道智云翻译 (v3)",
+        "en": "Enable Youdao Cloud Translate (v3)"
+      },
+      "default": false
+    },
+    {
+      "key": "youdaoAppKey",
+      "type": "text",
+      "title": {
+        "zh": "有道智云 应用 ID (appKey)",
+        "en": "Youdao App ID (appKey)"
+      },
+      "default": ""
+    },
+    {
+      "key": "youdaoAppSecret",
+      "type": "password",
+      "title": {
+        "zh": "有道智云 应用密钥 (appSecret)",
+        "en": "Youdao App Secret (appSecret)"
+      }
+    },
+    {
+      "key": "enableVolcengine",
+      "type": "bool",
+      "title": {
+        "zh": "启用火山翻译",
+        "en": "Enable Volcengine Translate"
+      },
+      "default": false
+    },
+    {
+      "key": "volcAccessKey",
+      "type": "text",
+      "title": {
+        "zh": "火山引擎 Access Key",
+        "en": "Volcengine Access Key"
+      },
+      "default": ""
+    },
+    {
+      "key": "volcSecretKey",
+      "type": "password",
+      "title": {
+        "zh": "火山引擎 Secret Key",
+        "en": "Volcengine Secret Key"
+      }
+    },
+    {
+      "key": "enableTencent",
+      "type": "bool",
+      "title": {
+        "zh": "启用腾讯翻译 (TMT)",
+        "en": "Enable Tencent Cloud Translate"
+      },
+      "default": false
+    },
+    {
+      "key": "tencentSecretId",
+      "type": "text",
+      "title": {
+        "zh": "腾讯云 SecretId",
+        "en": "Tencent SecretId"
+      },
+      "default": ""
+    },
+    {
+      "key": "tencentSecretKey",
+      "type": "password",
+      "title": {
+        "zh": "腾讯云 SecretKey",
+        "en": "Tencent SecretKey"
+      }
+    },
+    {
+      "key": "enableGoogle",
+      "type": "bool",
+      "title": {
+        "zh": "启用 Google 翻译 (v2)",
+        "en": "Enable Google Translate (v2)"
+      },
+      "default": false
+    },
+    {
+      "key": "googleKey",
+      "type": "password",
+      "title": {
+        "zh": "Google 翻译 API Key",
+        "en": "Google Translate API Key"
+      }
+    },
+    {
+      "key": "microsoftKey",
+      "type": "password",
+      "title": {
+        "zh": "微软 Translator 订阅密钥（可选）",
+        "en": "Microsoft Translator Subscription Key (Optional)"
+      },
+      "hint": {
+        "zh": "留空默认使用免 Key 接口；填写后使用 Azure 认知服务接口",
+        "en": "Leave empty for keyless endpoint; set to use Azure Cognitive Services"
+      }
+    },
+    {
+      "key": "microsoftRegion",
+      "type": "text",
+      "title": {
+        "zh": "微软 Translator 区域（可选）",
+        "en": "Microsoft Translator Region (Optional)"
+      },
+      "hint": {
+        "zh": "使用区域订阅密钥时填写，如 eastasia",
+        "en": "e.g. eastasia when using regional Azure key"
+      },
+      "default": ""
+    }
+  ]
+}
